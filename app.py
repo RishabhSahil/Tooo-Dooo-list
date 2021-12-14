@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
+import os
+from AI_Robot_Tools import AI_Speak,AI_Tools
+from googletrans.client import Translator
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "sqlite:///todo.db"
@@ -16,6 +19,62 @@ class Todo(db.Model):
     def __repr__(self) -> str:
         return f"{self.sno} - {self.title}"
 
+@app.route('/trans')
+def home():
+    return render_template('translate.html')
+
+@app.route('/translate', methods=['POST'])
+def translate():
+    title = request.form['title']
+    desc = request.form['desc'] 
+    return render_template('translate.html',hindi=AI_Tools.AI_Translate(title,'hi').text,english=AI_Tools.AI_Translate(desc,'en').text) 
+
+def ROBOT():
+    while True:
+        import speech_recognition as sr #pip install speechrecognition
+    
+        def  AI_Command():
+            try: ##AI_SpeechRecognition(1, 4, 7, 'en-in').lower()
+
+                r = sr.Recognizer()
+
+                with sr.Microphone() as source:
+                    print("Listening...")
+                    r.pause_threshold = 0.8
+                    audio = r.listen(source,2,4,None)
+
+                try:
+                    print("Recognizing..")
+                    query = r.recognize_google(audio, None, language='en-in')
+                    print(f"You Said : {query}")
+                
+                except:
+                    return AI_Command()
+
+                query = str(query)
+                return query.lower()
+
+            except:
+                return AI_Command()
+
+        def Speak(jarvisspeaksreplayanyanswer):
+            AI_Speak.Speak(0,150,jarvisspeaksreplayanyanswer)
+
+        try:
+            human_query=AI_Command() 
+            message=str(human_query) 
+            Speak(message)
+            return message
+        except:
+            try:
+                human_query=AI_Command()
+                message=str(human_query)
+                Speak(message)
+                return message
+            except:
+                pass
+        
+
 @app.route('/', methods=['GET', 'POST'])
 def hello_world():
     if request.method=='POST':
@@ -28,11 +87,11 @@ def hello_world():
     allTodo = Todo.query.all() 
     return render_template('index.html', allTodo=allTodo)
 
-@app.route('/show')
+@app.route('/test')
 def products():
-    allTodo = Todo.query.all()
-    print(allTodo)
-    return 'this is products page'
+    # aaaaa=AI_Tools.AI_Wish_Time_Date('good morning i am ready','good afternoon i am ready', 'good evening i am ready','good night i am ready')
+    # AI_Speak.Speak(0,150,aaaaa)
+    return render_template('test.html',aa=ROBOT())
 
 @app.route('/update/<int:sno>', methods=['GET', 'POST'])
 def update(sno):
@@ -55,6 +114,7 @@ def delete(sno):
     db.session.delete(todo)
     db.session.commit()
     return redirect("/")
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=8000)
